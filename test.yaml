@@ -1,0 +1,10 @@
+input_dir : test_in
+input_ext : non
+output_dir : test_out
+patterns :
+    - path : key
+      terms : key
+    - path : foo/bar
+      terms : bar
+    - path : pets
+      terms : [cat, dog]

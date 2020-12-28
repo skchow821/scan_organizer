@@ -2,6 +2,8 @@ import logging
 import yaml
 import argparse
 import os
+import shutil
+import sys
 
 def path_normalize(path):
     return os.path.abspath(os.path.expanduser(path))
@@ -9,6 +11,7 @@ def path_normalize(path):
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Takes a yaml file as input to move files into directories based on filename and keyword matches.')
     parser.add_argument('--config', '-c', dest='config_file', required=True, help='config yaml for organization')
+    parser.add_argument('--dry_run', action='store_true', help='Optional param for dry runs')
     arguments = parser.parse_args()
     arguments.config_file = path_normalize(arguments.config_file)
     return arguments
@@ -52,17 +55,26 @@ def main():
     setup_logging()
     args = parse_arguments()
     config_file = args.config_file
+    if args.dry_run:
+        logging.info("-- DRY RUN ONLY --")
 
     with open(args.config_file, 'r') as yaml_input:
         config = yaml.safe_load(yaml_input)
         config = validate_config(config)
+        if config is None:
+            sys.exit(1)
+
         for input_file in filter(lambda x : x.endswith(config["input_ext"]), \
                 os.listdir(config["input_dir"])):
             for pattern in config["patterns"]:
                 if pattern["terms"] in input_file:
-                    logging.debug("mv {} {}".format(\
-                        os.path.join(config["input_dir"], input_file), \
-                        pattern["path"]))
+                    src = os.path.join(config["input_dir"], input_file)
+                    dest = pattern["path"]
+                    logging.debug("mv {} {}".format(src, dest))
+
+                    if not args.dry_run:
+                        shutil.move(src, dest)
+                    break
 
 if __name__ == '__main__':
     main()

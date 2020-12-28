@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 import sys
+import functools
 
 def path_normalize(path):
     return os.path.abspath(os.path.expanduser(path))
@@ -67,7 +68,12 @@ def main():
         for input_file in filter(lambda x : x.endswith(config["input_ext"]), \
                 os.listdir(config["input_dir"])):
             for pattern in config["patterns"]:
-                if pattern["terms"] in input_file:
+                terms = pattern["terms"]
+                if type(terms) is not list:
+                    terms = [terms]
+                matched_list = map(lambda x: x in input_file, terms)
+                match = functools.reduce(lambda x, y: x or y, matched_list)
+                if match:
                     src = os.path.join(config["input_dir"], input_file)
                     dest = pattern["path"]
                     logging.debug("mv {} {}".format(src, dest))
